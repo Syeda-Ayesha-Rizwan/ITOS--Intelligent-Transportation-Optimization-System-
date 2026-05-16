@@ -1179,8 +1179,3 @@ public class ITOS extends JFrame {
             g.setFont(F_TINY);g.drawString(t,x+12,y+2);
         }
     }
-
-
-
-=======
->>>>>>> 66be78428493267ae7fefb4c02838aae8b49abd3
