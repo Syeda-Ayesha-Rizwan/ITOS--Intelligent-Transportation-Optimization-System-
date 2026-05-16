@@ -1179,3 +1179,52 @@ public class ITOS extends JFrame {
             g.setFont(F_TINY);g.drawString(t,x+12,y+2);
         }
     }
+
+    // ═══════════════════════════════════════════════════════
+    // SCORE GAUGE
+    // ═══════════════════════════════════════════════════════
+    class ScoreGauge extends JPanel {
+        int score=75;
+        ScoreGauge(){setOpaque(false);setPreferredSize(new Dimension(180,110));}
+        void setScore(int s){score=s;repaint();}
+        @Override
+        protected void paintComponent(Graphics g0){
+            Graphics2D g=(Graphics2D)g0;
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+            int W=getWidth(),H=getHeight();
+            int cx=W/2,cy=H-8,r=58;
+            // Track
+            g.setStroke(new BasicStroke(10,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));
+            g.setColor(C_BORDER);g.drawArc(cx-r,cy-r,r*2,r*2,0,180);
+            // Zones
+            Color[] zc={C_RED,C_AMBER,C_ECO};int[] za={60,40,80};int st=180;
+            for(int i=0;i<3;i++){g.setColor(new Color(zc[i].getRed(),zc[i].getGreen(),zc[i].getBlue(),70));g.drawArc(cx-r,cy-r,r*2,r*2,st,za[i]);st+=za[i];}
+            // Value arc
+            Color col=score>=80?C_ECO:score>=60?C_AMBER:C_RED;
+            g.setColor(col);
+            GradientPaint gp=new GradientPaint(cx-r,cy,col.darker(),cx+r,cy,col.brighter());
+            g.setPaint(gp);g.drawArc(cx-r,cy-r,r*2,r*2,180,(int)(score/100.0*180));
+            // Center value
+            g.setPaint(null);g.setFont(F_BIG);g.setColor(col);
+            FontMetrics fm=g.getFontMetrics();String sv=""+score;
+            g.drawString(sv,cx-fm.stringWidth(sv)/2,cy-6);
+            g.setFont(F_TINY);g.setColor(C_TXT3);
+            g.drawString("EFFICIENCY",cx-22,cy+14);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // MODERN PROGRESS BAR
+    // ═══════════════════════════════════════════════════════
+    class ModernProgressBar extends JPanel {
+        Color barColor;int value=50;
+        ModernProgressBar(Color c){barColor=c;setOpaque(false);setPreferredSize(new Dimension(0,8));}
+        void setValue(int v){value=Math.max(0,Math.min(100,v));repaint();}
+        @Override
+        protected void paintComponent(Graphics g0){
+            Graphics2D g=(Graphics2D)g0;g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setColor(C_BORDER);g.fillRoundRect(0,1,getWidth(),6,6,6);
+            int bw=(int)(getWidth()*value/100.0);
+            if(bw>2){GradientPaint gp=new GradientPaint(0,0,barColor.darker(),bw,0,barColor);g.setPaint(gp);g.fillRoundRect(0,1,bw,6,6,6);}
+        }
+    }
