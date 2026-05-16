@@ -133,7 +133,7 @@ public class ITOS extends JFrame {
     final String[] NAV_IDS = {"Dashboard","Policy","Experiment","About"};
     int activeNav = 0;
     // MATH ENGINE
-    // ═══════════════════════════════════════════════════════
+
     static double fuel(double v, double a, double b, double c) {
         return (v<=0) ? 9999 : a*v*v + b/v + c;
     }
@@ -299,4 +299,378 @@ public class ITOS extends JFrame {
             nav.add(b);navBtns[i]=b;
         }
         return nav;
+    }
+    // TOOLBAR
+    // ═══════════════════════════════════════════════════════
+    JPanel buildToolbar(){
+        JPanel tb=new JPanel(new FlowLayout(FlowLayout.CENTER,8,7));
+        tb.setBackground(C_BG2);
+        tb.setBorder(BorderFactory.createMatteBorder(1,0,0,0,C_BORDER));
+
+        Object[][] btns={
+                {"📊 Export CSV",    C_ECO,    C_ECO_DIM,   (Runnable)this::exportCSV},
+                {"📄 HTML Report",   C_BLUE,   C_BLUE_DIM,  (Runnable)this::saveHTML},
+                {"🖨️ Print Report",  C_AMBER,  C_AMBER_DIM, (Runnable)this::printReport},
+                {"💰 Fuel Prices",   C_ECO,    C_ECO_DIM,   (Runnable)this::updatePrices},
+                {"📊 Compare",       C_PURPLE, C_PURPLE_DIM,(Runnable)this::showCompare},
+                {"🔍 Analyze",       C_BLUE,   C_BLUE_DIM,  (Runnable)this::showAnalysis},
+                {"🔄 Reset",         C_TXT3,   C_BORDER,    (Runnable)this::resetAll},
+                {"❓ Help",          C_TXT3,   C_BORDER,    (Runnable)this::showHelp},
+                {"🌓 Theme",         C_TXT3,   C_BORDER,    (Runnable)this::toggleTheme},
+        };
+        for(Object[] bt:btns){
+            JButton b=toolBtn((String)bt[0],(Color)bt[1],(Color)bt[2]);
+            b.addActionListener(e->((Runnable)bt[3]).run());
+            tb.add(b);
+        }
+        modelToggleBtn=toolBtn("🇵🇰 Pakistan Model",C_PINK,C_RED_DIM);
+        modelToggleBtn.addActionListener(e->toggleModel());
+        tb.add(modelToggleBtn);
+        return tb;
+    }
+
+    JButton toolBtn(String text, Color fg, Color bg){
+        JButton b=new JButton(text);
+        b.setFont(F_SMALL);b.setForeground(fg);b.setBackground(bg);
+        b.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(fg.darker(),1,true),BorderFactory.createEmptyBorder(5,11,5,11)));
+        b.setFocusPainted(false);b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setOpaque(true);
+        b.addMouseListener(new MouseAdapter(){
+            public void mouseEntered(MouseEvent e){b.setBackground(bg.brighter());}
+            public void mouseExited(MouseEvent e){b.setBackground(bg);}
+        });
+        return b;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // DASHBOARD
+    // ═══════════════════════════════════════════════════════
+    JPanel buildDashboard(){
+        JPanel p=new JPanel(new BorderLayout(0,0));p.setBackground(C_BG);
+        p.add(buildLeftPanel(),BorderLayout.WEST);
+        p.add(buildCenterPanel(),BorderLayout.CENTER);
+        p.add(buildRightPanel(),BorderLayout.EAST);
+        return p;
+    }
+
+    // ── LEFT PANEL ──────────────────────────────────────────
+    JPanel buildLeftPanel(){
+        JPanel p=new JPanel();p.setLayout(new BoxLayout(p,BoxLayout.Y_AXIS));
+        p.setBackground(C_BG2);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0,0,0,1,C_BORDER),
+                BorderFactory.createEmptyBorder(14,14,14,14)));
+        p.setPreferredSize(new Dimension(300,0));
+
+        // Instructions box
+        JPanel instBox=new JPanel(new BorderLayout());instBox.setBackground(C_BG3);
+        instBox.setBorder(BorderFactory.createCompoundBorder(new LineBorder(C_BORDER,1,true),BorderFactory.createEmptyBorder(10,12,10,12)));
+        instructionArea=new JTextArea(
+                "╔═══════════════════════════════╗\n"+
+                        "║   SMART DRIVING ASSISTANT     ║\n"+
+                        "╚═══════════════════════════════╝\n\n"+
+                        "① Select vehicle & fuel type\n"+
+                        "② Adjust speed & distance\n"+
+                        "③ View real-time analysis\n"+
+                        "④ Follow recommendations\n\n"+
+                        "F(v) = av² + b/v + c\n"+
+                        "v* = (b/2a)^(1/3)\n\n"+
+                        "Optimal: 60-90 km/h"
+        );
+        instructionArea.setEditable(false);instructionArea.setFont(F_MONO);
+        instructionArea.setForeground(C_TXT2);instructionArea.setBackground(C_BG3);
+        instructionArea.setMaximumSize(new Dimension(280,200));
+        instBox.add(instructionArea);instBox.setAlignmentX(0);p.add(instBox);
+        p.add(vgap(10));
+
+        // Vehicle combo
+        p.add(sectionLbl("🚗  VEHICLE"));p.add(vgap(5));
+        cmbVehicle=new JComboBox<>();
+        for(int i=0;i<pakVehicles.length;i++) cmbVehicle.addItem(pakIcons[i]+" "+pakVehicles[i]);
+        styleCombo(cmbVehicle,C_ECO);
+        cmbVehicle.addActionListener(e->{currentPakVehicle=cmbVehicle.getSelectedIndex();updateAll();});
+        cmbVehicle.setAlignmentX(0);p.add(cmbVehicle);p.add(vgap(10));
+
+        // Fuel combo
+        p.add(sectionLbl("⛽  FUEL TYPE"));p.add(vgap(5));
+        cmbFuel=new JComboBox<>(new String[]{"Petrol","Diesel","Octane","Electric"});
+        styleCombo(cmbFuel,C_AMBER);
+        cmbFuel.addActionListener(e->{currentFuelType=(String)cmbFuel.getSelectedItem();updateAll();});
+        cmbFuel.setAlignmentX(0);p.add(cmbFuel);p.add(vgap(12));
+
+        // Calculus vehicle (shown only in calc mode)
+        p.add(sectionLbl("🔬  CALC VEHICLE"));p.add(vgap(5));
+        cmbCalVehicle=new JComboBox<>(CAL_VEHICLES);styleCombo(cmbCalVehicle,C_BLUE);
+        cmbCalVehicle.addActionListener(e->{vehicleIdx=cmbCalVehicle.getSelectedIndex();updateAll();});
+        cmbCalVehicle.setAlignmentX(0);p.add(cmbCalVehicle);p.add(vgap(5));
+        cmbScenario=new JComboBox<>(SCENARIOS);styleCombo(cmbScenario,C_PURPLE);
+        cmbScenario.addActionListener(e->{scenarioIdx=cmbScenario.getSelectedIndex();updateAll();});
+        cmbScenario.setAlignmentX(0);p.add(cmbScenario);p.add(vgap(12));
+
+        // Sliders
+        p.add(hRule());p.add(vgap(10));
+        lbSpeedVal=lbl("80 km/h",C_ECO,F_MONO_B);
+        slSpeed=mkSlider(20,200,80);
+        slSpeed.addChangeListener(e->{speed=slSpeed.getValue();lbSpeedVal.setText((int)speed+" km/h");updateAll();});
+        p.add(sliderPanel("⚡  SPEED",lbSpeedVal,slSpeed,C_ECO));p.add(vgap(10));
+
+        lbDistVal=lbl("100 km",C_BLUE,F_MONO_B);
+        slDist=mkSlider(10,500,100);
+        slDist.addChangeListener(e->{distance=slDist.getValue();lbDistVal.setText((int)distance+" km");updateAll();});
+        p.add(sliderPanel("📏  DISTANCE",lbDistVal,slDist,C_BLUE));p.add(vgap(10));
+
+        p.add(hRule());p.add(vgap(10));
+        p.add(sectionLbl("⚖  OPTIMIZATION WEIGHTS (α, β)"));p.add(vgap(8));
+
+        lbAlphaVal=lbl("1.0",C_AMBER,F_MONO_B);
+        slAlpha=mkSlider(1,30,10);
+        slAlpha.addChangeListener(e->{alpha=slAlpha.getValue()/10.0;lbAlphaVal.setText(DF1.format(alpha));updateAll();});
+        p.add(sliderPanel("Fuel Weight α",lbAlphaVal,slAlpha,C_AMBER));p.add(vgap(8));
+
+        lbBetaVal=lbl("0.5",C_PURPLE,F_MONO_B);
+        slBeta=mkSlider(1,30,5);
+        slBeta.addChangeListener(e->{beta=slBeta.getValue()/10.0;lbBetaVal.setText(DF1.format(beta));updateAll();});
+        p.add(sliderPanel("Time Weight β",lbBetaVal,slBeta,C_PURPLE));
+
+        p.add(Box.createVerticalGlue());
+        return p;
+    }
+
+    // ── CENTER PANEL ─────────────────────────────────────────
+    JPanel buildCenterPanel(){
+        JPanel p=new JPanel(new BorderLayout(0,10));p.setBackground(C_BG);
+        p.setBorder(BorderFactory.createEmptyBorder(12,12,8,8));
+
+        // 6 metric cards
+        JPanel cards=new JPanel(new GridLayout(2,3,8,8));cards.setOpaque(false);
+        lbFuelCost=lbl("Rs. 0",C_ECO,F_VAL);
+        lbSavings =lbl("Rs. 0",C_BLUE,F_VAL);
+        lbTime     =lbl("0 h",C_AMBER,F_VAL);
+        lbCO2      =lbl("0 kg",C_RED,F_VAL);
+        lbOptSpeed =lbl("0",C_ECO,F_VAL);
+        lbTotalCost=lbl("Rs. 0",C_PURPLE,F_VAL);
+        cards.add(metricCard("💰 FUEL COST",lbFuelCost,"PKR",C_ECO));
+        cards.add(metricCard("💎 SAVINGS",lbSavings,"PKR",C_BLUE));
+        cards.add(metricCard("⏱ TRAVEL TIME",lbTime,"hours",C_AMBER));
+        cards.add(metricCard("🌿 CO₂",lbCO2,"kg",C_RED));
+        cards.add(metricCard("🎯 OPTIMAL SPEED",lbOptSpeed,"km/h",C_ECO));
+        cards.add(metricCard("📊 TOTAL COST",lbTotalCost,"PKR",C_PURPLE));
+
+        graphPanel=new GraphPanel();graphPanel.setPreferredSize(new Dimension(0,270));
+
+        // Math row
+        JPanel mathRow=new JPanel(new GridLayout(1,2,8,0));mathRow.setOpaque(false);
+        lbMathModel=lbl("",C_TXT2,F_MONO);lbAnalytic=lbl("",C_ECO,F_MONO_B);
+        JPanel mr=darkBox(new BorderLayout(0,4));
+        mr.add(lbl("📐 MATHEMATICAL MODEL:",C_TXT3,F_TINY),BorderLayout.NORTH);
+        JPanel mrI=new JPanel(new GridLayout(2,1,0,2));mrI.setOpaque(false);
+        mrI.add(lbMathModel);mrI.add(lbAnalytic);mr.add(mrI);mathRow.add(mr);
+
+        lbRecommendation=lbl("",C_TXT,F_MONO_B);
+        JPanel rr=new JPanel(new BorderLayout(6,0));
+        rr.setBackground(new Color(0,229,160,12));
+        rr.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(0,229,160,80),1,true),BorderFactory.createEmptyBorder(10,12,10,12)));
+        rr.add(lbl("💡 RECOMMENDATION",C_ECO,F_TINY),BorderLayout.NORTH);
+        rr.add(lbRecommendation,BorderLayout.CENTER);
+        mathRow.add(rr);
+
+        p.add(cards,BorderLayout.NORTH);
+        p.add(graphPanel,BorderLayout.CENTER);
+        p.add(mathRow,BorderLayout.SOUTH);
+        return p;
+    }
+
+    // ── RIGHT PANEL ──────────────────────────────────────────
+    JPanel buildRightPanel(){
+        JPanel p=new JPanel();p.setLayout(new BoxLayout(p,BoxLayout.Y_AXIS));
+        p.setBackground(C_BG2);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0,1,0,0,C_BORDER),
+                BorderFactory.createEmptyBorder(14,14,14,14)));
+        p.setPreferredSize(new Dimension(240,0));
+
+        p.add(sectionLbl("📊  EFFICIENCY SCORE"));p.add(vgap(8));
+        gauge=new ScoreGauge();gauge.setAlignmentX(CENTER_ALIGNMENT);p.add(gauge);
+        scoreBar=new JProgressBar(0,100);scoreBar.setValue(75);scoreBar.setStringPainted(true);
+        scoreBar.setFont(F_TINY);scoreBar.setBackground(C_BG3);scoreBar.setForeground(C_ECO);
+        scoreBar.setBorder(new LineBorder(C_BORDER,1));scoreBar.setAlignmentX(CENTER_ALIGNMENT);
+        lbScore=lbl("Score: --",C_TXT3,F_TINY);lbScore.setAlignmentX(CENTER_ALIGNMENT);
+        p.add(vgap(6));p.add(scoreBar);p.add(vgap(3));p.add(lbScore);
+
+        p.add(vgap(12));p.add(hRule());p.add(vgap(10));
+        p.add(sectionLbl("📈  PERFORMANCE METERS"));p.add(vgap(8));
+
+        fuelBar=new ModernProgressBar(C_ECO);timeBar=new ModernProgressBar(C_AMBER);co2Bar=new ModernProgressBar(C_BLUE);
+        lbFuelBar=lbl("0%",C_ECO,F_TINY);lbTimeBar=lbl("0%",C_AMBER,F_TINY);lbCO2Bar=lbl("0%",C_BLUE,F_TINY);
+        p.add(meterRow("⛽ Fuel Economy",fuelBar,lbFuelBar,C_ECO));p.add(vgap(8));
+        p.add(meterRow("⏱ Time Efficiency",timeBar,lbTimeBar,C_AMBER));p.add(vgap(8));
+        p.add(meterRow("🌿 CO₂ Impact",co2Bar,lbCO2Bar,C_BLUE));
+
+        p.add(vgap(12));p.add(hRule());p.add(vgap(10));
+        p.add(sectionLbl("💡  LIVE ANALYSIS"));p.add(vgap(6));
+        explainLines=new JLabel[6];
+        for(int i=0;i<6;i++){
+            explainLines[i]=lbl("",C_TXT3,F_TINY);explainLines[i].setAlignmentX(0);
+            p.add(explainLines[i]);p.add(vgap(3));
+        }
+
+        p.add(Box.createVerticalGlue());
+        return p;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // POLICY SIMULATOR
+    // ═══════════════════════════════════════════════════════
+    JPanel buildPolicy(){
+        JPanel root=new JPanel(new BorderLayout(16,0));root.setBackground(C_BG);
+        root.setBorder(BorderFactory.createEmptyBorder(20,24,20,24));
+
+        JPanel left=darkCard();left.setLayout(new BoxLayout(left,BoxLayout.Y_AXIS));
+        left.setPreferredSize(new Dimension(360,0));
+        left.add(sectionLbl("🏛️  GOVERNMENT POLICY SIMULATOR"));left.add(vgap(4));
+        left.add(lbl("Model national speed limit impact on fuel & CO₂",C_TXT3,F_TINY));left.add(vgap(12));left.add(hRule());left.add(vgap(12));
+
+        JLabel pvLbl=lbl("80 km/h",C_ECO,F_MONO_B);
+        slPolSpd=mkSlider(40,140,80);
+        slPolSpd.addChangeListener(e->{policySpeed=slPolSpd.getValue();pvLbl.setText((int)policySpeed+" km/h");updatePolicy();});
+        left.add(sliderPanel("🚦  Speed Limit",pvLbl,slPolSpd,C_ECO));left.add(vgap(10));
+
+        JLabel popLbl=lbl("1.0 M",C_BLUE,F_MONO_B);
+        slPop=mkSlider(1,500,10);
+        slPop.addChangeListener(e->{popMillions=slPop.getValue()/10.0;popLbl.setText(DF1.format(popMillions)+" M");updatePolicy();});
+        left.add(sliderPanel("🚗  Vehicle Population",popLbl,slPop,C_BLUE));left.add(vgap(20));
+
+        JTextArea polMath=new JTextArea(
+                "Mathematical Basis:\n"+
+                        "  F(v) = av² + b/v + c\n"+
+                        "  Policy at speed v_p:\n"+
+                        "  Fuel diff = F(80) - F(v_p)\n"+
+                        "  National = diff × pop × trips\n"+
+                        "  CO₂ = fuel_saved × 2.31 kg/L"
+        );
+        polMath.setEditable(false);polMath.setFont(F_MONO);polMath.setForeground(C_TXT2);polMath.setBackground(C_BG4);
+        polMath.setBorder(BorderFactory.createEmptyBorder(8,10,8,10));
+        left.add(polMath);left.add(Box.createVerticalGlue());
+
+        JPanel right=darkCard();right.setLayout(new BoxLayout(right,BoxLayout.Y_AXIS));
+        right.add(sectionLbl("📊  IMPACT ANALYSIS RESULTS"));right.add(vgap(12));
+
+        lbPolicyFuel=lbl("—",C_ECO,F_VAL);
+        lbPolicyCO2 =lbl("—",C_RED,F_VAL);
+        lbPolicyNat =lbl("—",C_BLUE,F_VAL);
+        right.add(impactCard("Fuel per Vehicle / Day",lbPolicyFuel,C_ECO));right.add(vgap(10));
+        right.add(impactCard("National CO₂ Change",lbPolicyCO2,C_RED));right.add(vgap(10));
+        right.add(impactCard("National Fuel Saved / Day",lbPolicyNat,C_BLUE));right.add(vgap(16));
+        right.add(hRule());right.add(vgap(12));
+
+        lbPolicyRec=lbl("—",C_TXT2,F_MONO);
+        JPanel recBox=new JPanel(new BorderLayout(0,4));recBox.setBackground(new Color(0,229,160,10));
+        recBox.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(0,229,160,70),1,true),BorderFactory.createEmptyBorder(10,12,10,12)));
+        recBox.add(lbl("🏛️  Policy Recommendation",C_ECO,F_TINY),BorderLayout.NORTH);
+        recBox.add(lbPolicyRec,BorderLayout.CENTER);
+        recBox.setMaximumSize(new Dimension(Integer.MAX_VALUE,90));recBox.setAlignmentX(0);
+        right.add(recBox);right.add(Box.createVerticalGlue());
+
+        root.add(left,BorderLayout.WEST);root.add(right,BorderLayout.CENTER);
+        return root;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // EXPERIMENT MODE
+    // ═══════════════════════════════════════════════════════
+    JPanel buildExperiment(){
+        JPanel root=new JPanel(new BorderLayout(16,0));root.setBackground(C_BG);
+        root.setBorder(BorderFactory.createEmptyBorder(20,24,20,24));
+
+        JPanel left=darkCard();left.setLayout(new BoxLayout(left,BoxLayout.Y_AXIS));
+        left.setPreferredSize(new Dimension(360,0));
+
+        left.add(sectionLbl("🧪  EXPERIMENT: MODIFY F(v) CONSTANTS"));left.add(vgap(4));
+        left.add(lbl("Explore how a, b, c affect the optimal speed",C_TXT3,F_TINY));left.add(vgap(12));left.add(hRule());left.add(vgap(12));
+
+        lbExpAVal=lbl("0.004",C_ECO,F_MONO_B);
+        slExpA=mkSlider(1,50,4);
+        slExpA.addChangeListener(e->{expA=slExpA.getValue()/1000.0;lbExpAVal.setText(String.format("%.4f",expA));updateExperiment();});
+        left.add(sliderPanel("a  (air resistance — av²)",lbExpAVal,slExpA,C_ECO));left.add(vgap(10));
+
+        lbExpBVal=lbl("200",C_AMBER,F_MONO_B);
+        slExpB=mkSlider(50,800,200);
+        slExpB.addChangeListener(e->{expB=slExpB.getValue();lbExpBVal.setText(DF0.format(expB));updateExperiment();});
+        left.add(sliderPanel("b  (engine inefficiency — b/v)",lbExpBVal,slExpB,C_AMBER));left.add(vgap(10));
+
+        lbExpCVal=lbl("5.0",C_BLUE,F_MONO_B);
+        slExpC=mkSlider(1,300,50);
+        slExpC.addChangeListener(e->{expC=slExpC.getValue()/10.0;lbExpCVal.setText(DF1.format(expC));updateExperiment();});
+        left.add(sliderPanel("c  (constant rolling friction)",lbExpCVal,slExpC,C_BLUE));left.add(vgap(16));left.add(hRule());left.add(vgap(12));
+
+        // Derivation box
+        JPanel deriv=new JPanel(new GridLayout(7,1,0,4));deriv.setBackground(C_BG4);
+        deriv.setBorder(BorderFactory.createCompoundBorder(new LineBorder(C_BORDER,1,true),BorderFactory.createEmptyBorder(12,14,12,14)));
+        deriv.setMaximumSize(new Dimension(Integer.MAX_VALUE,180));deriv.setAlignmentX(0);
+        JLabel[] dLines={
+                lbl("FULL CALCULUS DERIVATION:",C_ECO,F_MONO_B),
+                lbl("  F(v) = a·v² + b/v + c",C_TXT,F_MONO),
+                lbl("  dF/dv = 2av − b/v²",C_BLUE,F_MONO),
+                lbl("  Set dF/dv = 0:",C_TXT2,F_MONO),
+                lbl("  2av = b/v²  →  v³ = b/2a",C_AMBER,F_MONO),
+                lbl("  d²F/dv² = 2a + 2b/v³ > 0",C_TXT2,F_MONO),
+                lbl("",C_ECO,F_MONO_B),
+        };
+        for(JLabel dl:dLines){dl.setAlignmentX(0);deriv.add(dl);}
+        lbExpAnalytic=dLines[6];
+        left.add(deriv);left.add(Box.createVerticalGlue());
+
+        expGraph=new GraphPanel();expGraph.setMode(true);expGraph.setBackground(C_BG3);
+        expGraph.setBorder(BorderFactory.createLineBorder(C_BORDER,1));
+
+        root.add(left,BorderLayout.WEST);root.add(expGraph,BorderLayout.CENTER);
+        return root;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ABOUT
+    // ═══════════════════════════════════════════════════════
+    JPanel buildAbout(){
+        JPanel root=new JPanel(new BorderLayout());root.setBackground(C_BG);
+        root.setBorder(BorderFactory.createEmptyBorder(24,32,24,32));
+        JTextArea about=new JTextArea(
+                "╔══════════════════════════════════════════════════════════════════════════════╗\n"+
+                        "║        ITOS — INTELLIGENT TRANSPORTATION OPTIMIZATION SYSTEM v3.0           ║\n"+
+                        "║                      Pakistan Edition — Calculus in SE                      ║\n"+
+                        "╚══════════════════════════════════════════════════════════════════════════════╝\n\n"+
+                        "📐 MATHEMATICAL FOUNDATION (CALCULUS CORE):\n"+
+                        "═══════════════════════════════════════════════════════════\n"+
+                        "   Fuel Model:       F(v) = a·v² + b/v + c + d·L\n"+
+                        "   1st Derivative:   dF/dv = 2av − b/v²\n"+
+                        "   Critical Point:   set dF/dv = 0  →  v³ = b/(2a)\n"+
+                        "   Optimal Speed:    v* = (b/(2a))^(1/3)  [CLOSED FORM]\n"+
+                        "   2nd Derivative:   d²F/dv² = 2a + 2b/v³ > 0  [MINIMUM PROVEN]\n"+
+                        "   Trade-off:        G(v) = α·F(v) + β·T(v)   T(v) = D/v\n\n"+
+                        "💻 SOFTWARE ENGINEERING MODULES:\n"+
+                        "═══════════════════════════════════════════════════════════\n"+
+                        "   • FuelModelEngine      → F(v) = av² + b/v + c\n"+
+                        "   • OptimizationEngine   → Numerical & Analytic solvers\n"+
+                        "   • SimulationEngine     → Scenarios & conditions\n"+
+                        "   • RecommendationEngine → AI-style driving advice\n"+
+                        "   • PolicySimulator      → National speed limit impact\n"+
+                        "   • EnvironmentModule    → CO₂ & sustainability\n"+
+                        "   • EconomicsModule      → PKR savings calculator\n"+
+                        "   • GraphEngine          → Custom Swing canvas charts\n\n"+
+                        "🇵🇰 PAKISTAN-SPECIFIC FEATURES:\n"+
+                        "═══════════════════════════════════════════════════════════\n"+
+                        "   • 7 real Pakistani vehicles (Mehran, Civic, Hilux, CD70...)\n"+
+                        "   • Live fuel prices in PKR (Petrol/Diesel/Octane/Electric)\n"+
+                        "   • City vs highway mileage models\n"+
+                        "   • National policy impact in millions of vehicles\n"+
+                        "   • CO₂ savings in metric tonnes\n\n"
+
+
+        );
+        about.setEditable(false);about.setFont(F_MONO);about.setForeground(C_TXT2);about.setBackground(C_BG);
+        about.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
+        JScrollPane sc=new JScrollPane(about);sc.setBorder(new LineBorder(C_BORDER,1));
+        sc.getViewport().setBackground(C_BG);sc.setBackground(C_BG);
+        root.add(sc,BorderLayout.CENTER);
+        return root;
     }
