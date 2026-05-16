@@ -1228,3 +1228,17 @@ public class ITOS extends JFrame {
             if(bw>2){GradientPaint gp=new GradientPaint(0,0,barColor.darker(),bw,0,barColor);g.setPaint(gp);g.fillRoundRect(0,1,bw,6,6,6);}
         }
     }
+    // MAIN
+    // ═══════════════════════════════════════════════════════
+    public static void main(String[] args){
+        try{UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}catch(Exception e){}
+        UIManager.put("ComboBox.background", C_BG4);
+        UIManager.put("ComboBox.foreground", C_TXT);
+        UIManager.put("ComboBox.selectionBackground", C_ECO_DIM);
+        UIManager.put("ComboBox.selectionForeground", C_ECO);
+        UIManager.put("ScrollBar.background", C_BG2);
+        UIManager.put("ScrollBar.thumb", C_BORDER);
+        UIManager.put("ScrollBar.width", 8);
+        SwingUtilities.invokeLater(ITOS::new);
+    }
+}
