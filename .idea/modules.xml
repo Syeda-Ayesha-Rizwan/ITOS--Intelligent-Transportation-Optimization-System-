@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
       <module fileurl="file://$PROJECT_DIR$/calculus.iml" filepath="$PROJECT_DIR$/calculus.iml" />
+=======
+      <module fileurl="file://$PROJECT_DIR$/ITOS.iml" filepath="$PROJECT_DIR$/ITOS.iml" />
+>>>>>>> 66be78428493267ae7fefb4c02838aae8b49abd3
     </modules>
   </component>
 </project>

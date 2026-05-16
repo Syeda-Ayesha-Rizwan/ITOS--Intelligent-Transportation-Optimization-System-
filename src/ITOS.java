@@ -132,10 +132,15 @@ public class ITOS extends JFrame {
     final String[] NAV = {"🏠 Dashboard","🏛 Policy","🧪 Experiment","📖 About"};
     final String[] NAV_IDS = {"Dashboard","Policy","Experiment","About"};
     int activeNav = 0;
+<<<<<<< HEAD
 
     // ═══════════════════════════════════════════════════════
     // MATH ENGINE
     // ═══════════════════════════════════════════════════════
+=======
+    // MATH ENGINE
+
+>>>>>>> 66be78428493267ae7fefb4c02838aae8b49abd3
     static double fuel(double v, double a, double b, double c) {
         return (v<=0) ? 9999 : a*v*v + b/v + c;
     }
@@ -302,8 +307,11 @@ public class ITOS extends JFrame {
         }
         return nav;
     }
+<<<<<<< HEAD
 
     // ═══════════════════════════════════════════════════════
+=======
+>>>>>>> 66be78428493267ae7fefb4c02838aae8b49abd3
     // TOOLBAR
     // ═══════════════════════════════════════════════════════
     JPanel buildToolbar(){
@@ -678,6 +686,7 @@ public class ITOS extends JFrame {
         root.add(sc,BorderLayout.CENTER);
         return root;
     }
+<<<<<<< HEAD
 
     // ═══════════════════════════════════════════════════════
     // UPDATE ALL
@@ -1173,3 +1182,5 @@ public class ITOS extends JFrame {
 
 
 
+=======
+>>>>>>> 66be78428493267ae7fefb4c02838aae8b49abd3
