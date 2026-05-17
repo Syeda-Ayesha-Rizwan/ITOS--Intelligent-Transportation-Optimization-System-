@@ -11,13 +11,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
 
-/**
- * ╔══════════════════════════════════════════════════════════════════╗
- * ║  ITOS — Intelligent Transportation Optimization System           ║
- * ║  Calculus-Driven Smart Mobility | Pakistan Edition v3.0          ║
- * ║  Applications of Calculus in Software Engineering                ║
- * ╚══════════════════════════════════════════════════════════════════╝
- */
+
 public class ITOS extends JFrame {
 
     // ═══════════════════════════════════════════════════════
